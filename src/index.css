@@ -1,3 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.App {
+  text-align: center;
+}
+
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
