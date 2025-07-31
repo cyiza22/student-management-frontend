@@ -17,7 +17,11 @@ const Register: React.FC = () => {
     const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: name === 'enrollmentYear' ? parseInt(value) || new Date().getFullYear() : value
+        });
         setError('');
     };
 
@@ -52,6 +56,7 @@ const Register: React.FC = () => {
                     <div>
                         <input
                             name="fullName"
+                            value={formData.fullName}
                             onChange={handleChange}
                             placeholder="Full Name"
                             required
@@ -62,6 +67,7 @@ const Register: React.FC = () => {
                         <input
                             name="email"
                             type="email"
+                            value={formData.email}
                             onChange={handleChange}
                             placeholder="Email"
                             required
@@ -71,6 +77,7 @@ const Register: React.FC = () => {
                     <div>
                         <input
                             name="phone"
+                            value={formData.phone}
                             onChange={handleChange}
                             placeholder="Phone Number"
                             required
@@ -81,6 +88,7 @@ const Register: React.FC = () => {
                         <input
                             name="password"
                             type="password"
+                            value={formData.password}
                             onChange={handleChange}
                             placeholder="Password"
                             required
@@ -91,6 +99,7 @@ const Register: React.FC = () => {
                     <div>
                         <select
                             name="role"
+                            value={formData.role}
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         >
@@ -103,6 +112,7 @@ const Register: React.FC = () => {
                             <div>
                                 <input
                                     name="course"
+                                    value={formData.course}
                                     onChange={handleChange}
                                     placeholder="Course of Study"
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"

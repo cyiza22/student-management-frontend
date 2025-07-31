@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminDashboard from './AdminDashboard';
@@ -8,9 +8,18 @@ const Dashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+        }
+    }, [user, navigate]);
+
     if (!user) {
-        navigate('/login');
-        return <div>Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-xl">Loading...</div>
+            </div>
+        );
     }
 
     const handleLogout = () => {

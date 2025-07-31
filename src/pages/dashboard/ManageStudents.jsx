@@ -73,7 +73,24 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
     const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: name === 'enrollmentYear' ? parseInt(value) || new Date().getFullYear() : value
+        });
+    };
+
+    const resetForm = () => {
+        setFormData({
+            fullName: '',
+            email: '',
+            phone: '',
+            password: '',
+            role: 'student',
+            course: '',
+            enrollmentYear: new Date().getFullYear(),
+            status: 'Active'
+        });
     };
 
     const handleAddStudent = async (e: React.FormEvent) => {
@@ -84,16 +101,7 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowAddForm(false);
-            setFormData({
-                fullName: '',
-                email: '',
-                phone: '',
-                password: '',
-                role: 'student',
-                course: '',
-                enrollmentYear: new Date().getFullYear(),
-                status: 'Active'
-            });
+            resetForm();
             fetchStudents();
             onStatsUpdate();
         } catch (error: any) {
@@ -107,10 +115,16 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/users/${editingStudent._id}`, formData, {
+            const updateData = { ...formData };
+            if (!updateData.password) {
+                delete updateData.password; // Don't update password if empty
+            }
+
+            await axios.put(`http://localhost:5000/api/admin/users/${editingStudent._id}`, updateData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEditingStudent(null);
+            resetForm();
             fetchStudents();
             onStatsUpdate();
         } catch (error: any) {
@@ -179,16 +193,7 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
 
     const cancelEdit = () => {
         setEditingStudent(null);
-        setFormData({
-            fullName: '',
-            email: '',
-            phone: '',
-            password: '',
-            role: 'student',
-            course: '',
-            enrollmentYear: new Date().getFullYear(),
-            status: 'Active'
-        });
+        resetForm();
     };
 
     if (loading) {
@@ -212,6 +217,12 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                     {error}
+                    <button
+                        onClick={() => setError('')}
+                        className="float-right text-red-700 hover:text-red-900"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
 
@@ -239,6 +250,122 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
                     </select>
                 </div>
             </div>
+
+            {/* Students Table */}
+            <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200">
+                    <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Course
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Year
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Role
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {currentStudents.map((student) => (
+                        <tr key={student._id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {student.course || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {student.enrollmentYear || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <select
+                                    value={student.status}
+                                    onChange={(e) => handleStatusChange(student._id, e.target.value)}
+                                    className={`text-xs font-semibold rounded-full px-2 py-1 ${
+                                        student.status === 'Active' ? 'bg-green-100 text-green-800' :
+                                            student.status === 'Graduated' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-red-100 text-red-800'
+                                    }`}
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="Graduated">Graduated</option>
+                                    <option value="Dropped">Dropped</option>
+                                </select>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <select
+                                    value={student.role}
+                                    onChange={(e) => handleRoleChange(student._id, e.target.value)}
+                                    className={`text-xs font-semibold rounded-full px-2 py-1 ${
+                                        student.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                                    }`}
+                                >
+                                    <option value="student">Student</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => startEdit(student)}
+                                        className="text-indigo-600 hover:text-indigo-900"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteStudent(student._id)}
+                                        className="text-red-600 hover:text-red-900"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-4 mt-6">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        Previous
+                    </button>
+                    <span className="text-sm text-gray-700">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
+
+            {/* No results message */}
+            {filteredStudents.length === 0 && (
+                <div className="text-center py-8">
+                    <p className="text-gray-500">No students found matching your criteria.</p>
+                </div>
+            )}
 
             {/* Add Student Form Modal */}
             {showAddForm && (
@@ -329,7 +456,7 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setShowAddForm(false)}
+                                    onClick={() => { setShowAddForm(false); resetForm(); }}
                                     className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg font-medium transition duration-200"
                                 >
                                     Cancel
@@ -438,131 +565,15 @@ const ManageStudents: React.FC<ManageStudentsProps> = ({ onStatsUpdate }) => {
                     </div>
                 </div>
             )}
-
-            {/* Students Table */}
-            <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Course
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Year
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Role
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {currentStudents.map((student) => (
-                        <tr key={student._id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">{student.fullName}</div>
-                                <div className="text-sm text-gray-500">{student.phone}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {student.email}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {student.course || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {student.enrollmentYear || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <select
-                                    value={student.status}
-                                    onChange={(e) => handleStatusChange(student._id, e.target.value)}
-                                    className={`text-xs font-semibold rounded-full px-2 py-1 ${
-                                        student.status === 'Active' ? 'bg-green-100 text-green-800' :
-                                            student.status === 'Graduated' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-red-100 text-red-800'
-                                    }`}
-                                >
-                                    <option value="Active">Active</option>
-                                    <option value="Graduated">Graduated</option>
-                                    <option value="Dropped">Dropped</option>
-                                </select>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <select
-                                    value={student.role}
-                                    onChange={(e) => handleRoleChange(student._id, e.target.value)}
-                                    className={`text-xs font-semibold rounded-full px-2 py-1 ${
-                                        student.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                >
-                                    <option value="student">Student</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => startEdit(student)}
-                                        className="text-indigo-600 hover:text-indigo-900"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteStudent(student._id)}
-                                        className="text-red-600 hover:text-red-900"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-4 mt-6">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                        Previous
-                    </button>
-                    <span className="text-sm text-gray-700">
-                        Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
-
-            {/* No results message */}
-            {filteredStudents.length === 0 && (
-                <div className="text-center py-8">
-                    <p className="text-gray-500">No students found matching your criteria.</p>
-                </div>
-            )}
         </div>
     );
 };
 
-export default ManageStudents;
+export default ManageStudents;-nowrap">
+<div className="text-sm font-medium text-gray-900">{student.fullName}</div>
+<div className="text-sm text-gray-500">{student.phone}</div>
+</td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+    {student.email}
+</td>
+<td className="px-6 py-4 whitespace

@@ -14,7 +14,7 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    setUser: (user: User) => void;
+    setUser: (user: User | null) => void;
     logout: () => void;
 }
 
@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const decoded = jwtDecode<User>(token);
                 setUser(decoded);
             } catch (error) {
+                console.error('Invalid token:', error);
                 localStorage.removeItem('token');
             }
         }

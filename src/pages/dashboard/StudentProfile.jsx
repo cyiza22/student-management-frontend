@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -27,7 +27,11 @@ const StudentProfile: React.FC = () => {
     const [success, setSuccess] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setProfileData({ ...profileData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setProfileData({
+            ...profileData,
+            [name]: name === 'enrollmentYear' ? parseInt(value) || new Date().getFullYear() : value
+        });
         setError('');
         setSuccess('');
     };
