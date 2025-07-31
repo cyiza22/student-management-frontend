@@ -1,47 +1,147 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
-export default function Register() {
+const Register: React.FC = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
         phone: '',
         password: '',
-        role: 'student',
+        role: 'student' as 'student' | 'admin',
+        course: '',
+        enrollmentYear: new Date().getFullYear()
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+
         try {
             await axios.post('http://localhost:5000/api/auth/register', formData);
+            alert('Registration successful! Please login.');
             navigate('/login');
-        } catch (error) {
-            alert('Registration failed');
+        } catch (error: any) {
+            setError(error.response?.data?.message || 'Registration failed');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col justify-center items-center bg-primary">
-            <div className="bg-white shadow-md rounded p-6 w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-4 text-blackish">Register</h2>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <input name="fullName" onChange={handleChange} placeholder="Full Name" required className="p-2 border rounded" />
-                    <input name="email" onChange={handleChange} placeholder="Email" required className="p-2 border rounded" />
-                    <input name="phone" onChange={handleChange} placeholder="Phone" required className="p-2 border rounded" />
-                    <input name="password" type="password" onChange={handleChange} placeholder="Password" required className="p-2 border rounded" />
-                    <select name="role" onChange={handleChange} className="p-2 border rounded">
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <button type="submit" className="bg-primary text-blackish p-2 rounded">Register</button>
+        <div className="min-h-screen flex flex-col justify-center items-center bg-green-100 py-8">
+            <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+                <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">Register</h2>
+
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <input
+                            name="fullName"
+                            onChange={handleChange}
+                            placeholder="Full Name"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <input
+                            name="email"
+                            type="email"
+                            onChange={handleChange}
+                            placeholder="Email"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <input
+                            name="phone"
+                            onChange={handleChange}
+                            placeholder="Phone Number"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <input
+                            name="password"
+                            type="password"
+                            onChange={handleChange}
+                            placeholder="Password"
+                            required
+                            minLength={6}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <select
+                            name="role"
+                            onChange={handleChange}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                            <option value="student">Student</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    {formData.role === 'student' && (
+                        <>
+                            <div>
+                                <input
+                                    name="course"
+                                    onChange={handleChange}
+                                    placeholder="Course of Study"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <input
+                                    name="enrollmentYear"
+                                    type="number"
+                                    onChange={handleChange}
+                                    placeholder="Enrollment Year"
+                                    value={formData.enrollmentYear}
+                                    min="2000"
+                                    max="2030"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                />
+                            </div>
+                        </>
+                    )}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white p-3 rounded-lg font-semibold transition duration-200"
+                    >
+                        {loading ? 'Registering...' : 'Register'}
+                    </button>
                 </form>
+
+                <div className="mt-6 text-center">
+                    <p className="text-gray-600">
+                        Already have an account?{' '}
+                        <Link to="/login" className="text-green-600 hover:text-green-700 font-semibold">
+                            Login here
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );
-}
+};
+
+export default Register;

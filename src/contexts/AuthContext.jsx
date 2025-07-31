@@ -1,16 +1,41 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import jwt_decode from 'jwt-decode';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
-const AuthContext = createContext();
+interface User {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    role: 'student' | 'admin';
+    course?: string;
+    enrollmentYear?: number;
+    status?: 'Active' | 'Graduated' | 'Dropped';
+}
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+interface AuthContextType {
+    user: User | null;
+    setUser: (user: User) => void;
+    logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+    children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+    const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            const decoded = jwt_decode(token);
-            setUser(decoded);
+            try {
+                const decoded = jwtDecode<User>(token);
+                setUser(decoded);
+            } catch (error) {
+                localStorage.removeItem('token');
+            }
         }
     }, []);
 
@@ -26,4 +51,10 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};
